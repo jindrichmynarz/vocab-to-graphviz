@@ -1,0 +1,12 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT ?class
+WHERE {
+  GRAPH <http://www.w3.org/2002/07/owl> {
+    ?classClass rdfs:subClassOf* rdfs:Class .
+  }
+  GRAPH <urn:vocab> {
+    ?class a ?classClass .
+    FILTER isIRI(?class)
+  }
+}

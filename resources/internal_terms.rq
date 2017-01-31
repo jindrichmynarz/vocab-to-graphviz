@@ -1,0 +1,19 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?term
+WHERE {
+  {
+    SELECT ?vocabulary (COUNT(?term) AS ?count)
+    WHERE {
+      GRAPH <urn:vocab> {
+        ?term rdfs:isDefinedBy ?vocabulary .
+      }
+    }
+    GROUP BY ?vocabulary
+    ORDER BY DESC(?count)
+    LIMIT 1
+  }
+  GRAPH <urn:vocab> {
+    ?term rdfs:isDefinedBy ?vocabulary .
+  }
+}

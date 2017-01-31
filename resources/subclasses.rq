@@ -1,0 +1,11 @@
+PREFIX owl:  <http://www.w3.org/2002/07/owl#>
+PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?subclass ?superclass
+WHERE {
+  GRAPH <urn:vocab> {
+    ?subclass rdfs:subClassOf/(owl:unionOf/rdf:rest*/rdf:first)? ?superclass .
+    FILTER (isIRI(?subclass) && isIRI(?superclass))
+  }
+}
