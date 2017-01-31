@@ -7,6 +7,7 @@
                  [org.clojure/tools.cli "0.3.5"]
                  [mount "0.1.11"]
                  [slingshot "0.12.2"]
+                 [stencil "0.5.0"]
                  [commons-validator/commons-validator "1.5.1"]
                  [cheshire "5.7.0"]
                  [hiccup "1.0.5"]
