@@ -1,14 +1,15 @@
 # vocab-to-graphviz
 
-A Clojure library designed to ... well, that part is up to you.
+Visualize RDF vocabularies via [Graphviz](http://www.graphviz.org).
 
 ## Usage
 
-FIXME
+```bash
+target/vocab_to_graphviz --help
+```
 
 ## License
 
-Copyright © 2017 FIXME
+Copyright © 2017 Jindřich Mynarz
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Distributed under the Eclipse Public License version 1.0. 
