@@ -1,0 +1,25 @@
+{{!
+@param IRI property
+}}
+
+PREFIX owl:  <http://www.w3.org/2002/07/owl#>
+PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+ASK
+WHERE {
+  {
+    GRAPH <urn:vocab> {
+      <{{property}}> a ?class .
+    }
+    GRAPH <urn:x-arq:UnionGraph> {
+      ?class rdfs:subClassOf* owl:DatatypeProperty .
+    }
+  } UNION {
+    GRAPH <urn:vocab> {
+      <{{property}}> rdfs:subPropertyOf*/rdfs:range/(owl:unionOf/rdf:rest*/rdf:first)? ?range .
+      FILTER (isIRI(?range) && STRSTARTS(STR(?range), STR(xsd:)))
+    }
+  }
+}

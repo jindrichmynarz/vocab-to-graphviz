@@ -4,45 +4,29 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
 
 SELECT DISTINCT ?property
-                ?domain
-                ?range
-                ?isDatatypeProperty
+                (COALESCE(?ownDomain, ?superDomain) AS ?domain)
+                (COALESCE(?ownRange, ?superRange) AS ?range)
 WHERE {
-  {
-    SELECT DISTINCT ?property
-                    (COALESCE(?ownDomain, ?superDomain) AS ?domain)
-                    (COALESCE(?ownRange, ?superRange) AS ?range)
-                    ?datatypeProperty
-    WHERE {
-      GRAPH <http://www.w3.org/2002/07/owl> {
-        ?class rdfs:subClassOf* rdf:Property .
-      }
-      GRAPH <urn:vocab> {
-        ?property a ?class .
-        OPTIONAL {
-          ?property rdfs:domain/(owl:unionOf/rdf:rest*/rdf:first)? ?ownDomain .
-          FILTER isIRI(?ownDomain)
-        }
-        OPTIONAL {
-          ?property rdfs:range/(owl:unionOf/rdf:rest*/rdf:first)? ?ownRange .
-          FILTER isIRI(?ownRange)
-        }
-        OPTIONAL {
-          ?property rdfs:subPropertyOf+/rdfs:domain/(owl:unionOf/rdf:rest*/rdf:first)? ?superDomain .
-          FILTER isIRI(?superDomain)
-        }
-        OPTIONAL {
-          ?property rdfs:subPropertyOf+/rdfs:range/(owl:unionOf/rdf:rest*/rdf:first)? ?superRange .
-          FILTER isIRI(?superRange)
-        }
-      }
-      OPTIONAL {
-        GRAPH <urn:x-arq:UnionGraph> {
-          ?class rdfs:subClassOf* ?datatypeProperty .
-          ?datatypeProperty rdfs:subClassOf* owl:DatatypeProperty .
-        }
-      }
+  GRAPH <http://www.w3.org/2002/07/owl> {
+    ?class rdfs:subClassOf* rdf:Property .
+  }
+  GRAPH <urn:vocab> {
+    ?property a ?class .
+    OPTIONAL {
+      ?property rdfs:domain/(owl:unionOf/rdf:rest*/rdf:first)? ?ownDomain .
+      FILTER isIRI(?ownDomain)
+    }
+    OPTIONAL {
+      ?property rdfs:range/(owl:unionOf/rdf:rest*/rdf:first)? ?ownRange .
+      FILTER isIRI(?ownRange)
+    }
+    OPTIONAL {
+      ?property rdfs:subPropertyOf+/rdfs:domain/(owl:unionOf/rdf:rest*/rdf:first)? ?superDomain .
+      FILTER isIRI(?superDomain)
+    }
+    OPTIONAL {
+      ?property rdfs:subPropertyOf+/rdfs:range/(owl:unionOf/rdf:rest*/rdf:first)? ?superRange .
+      FILTER isIRI(?superRange)
     }
   }
-  BIND (IF(BOUND(?datatypeProperty) || STRSTARTS(STR(?range), STR(xsd:)), true, false) AS ?isDatatypeProperty) 
 }
