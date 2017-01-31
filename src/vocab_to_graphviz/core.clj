@@ -2,49 +2,65 @@
   (:require [vocab-to-graphviz.sparql :as sparql]
             [vocab-to-graphviz.prefix :as prefix]
             [vocab-to-graphviz.util :as util]
+            [clojure.java.io :as io]
             [clojure.string :as string]))
+
+(def ^:private ->query
+  (comp slurp io/resource))
 
 (defn classes
   "Get classes in the vocabulary."
   []
-  (sparql/select-query "classes.rq"))
+  (sparql/select-query (->query "classes.rq")))
 
 (defn properties
   "Get properties in the vocabulary."
   []
-  (sparql/select-query "properties.rq"))
+  (sparql/select-query (->query "properties.rq")))
 
 (defn subclasses
   "Get rdfs:subClassOf links in the vocabulary."
   []
-  (sparql/select-query "subclasses.rq"))
+  (sparql/select-query (->query "subclasses.rq")))
 
 (defn get-internal-terms
   "Returns a predicate testing whether term from the vocabulary."
   []
-  (into #{} (map :term (sparql/select-query "internal_terms.rq"))))
+  (->> "internal_terms.rq"
+       ->query
+       sparql/select-query
+       (map :term)
+       (into #{})))
+
+(defn datatype-property?
+  "Test if `property` is a datatype property."
+  [property]
+  (sparql/ask-query (sparql/template "is_datatype_property.mustache" :data {:property property})))
 
 (defn schema
   "Generate schema of the vocabulary."
   []
-  (let [remove-datatype-property-annotation (fn [property] (dissoc property :isDatatypeProperty))
+  (let [remove-datatype-property-annotation (fn [property] (dissoc property :datatype-property?))
         remove-domain (fn [property] (dissoc property :domain))
-        properties' (properties)
+        properties' (map (fn [{:keys [property]
+                               :as data}]
+                           (assoc data :datatype-property? (datatype-property? property)))
+                         (properties))
         subclasses' (subclasses)
         internal-term? (get-internal-terms)
         ->class (partial hash-map :class)
         datatype-property-domains (->> properties'
-                                       (filter :isDatatypeProperty)
+                                       (filter :datatype-property?)
                                        (map (comp ->class :domain)))
         object-property-domain-ranges (->> properties'
-                                           (remove :isDatatypeProperty)
+                                           (remove :datatype-property?)
                                            (mapcat (juxt :domain :range))
                                            (map ->class))
         classes' (for [{class-iri :class} (distinct (concat (classes)
                                                             datatype-property-domains
                                                             object-property-domain-ranges))
                        :let [class-datatype-property? (every-pred (comp (partial = class-iri) :domain)
-                                                                  :isDatatypeProperty)
+                                                                  :datatype-property?)
                              datatype-properties (->> properties'
                                                       (filter class-datatype-property?)
                                                       (map (comp remove-domain
@@ -54,7 +70,7 @@
                             :internal? (boolean (internal-term? class-iri))}
                      (seq datatype-properties) (assoc :datatype-properties datatype-properties)))
         object-properties (->> properties'
-                               (remove :isDatatypeProperty)
+                               (remove :datatype-property?)
                                (map remove-datatype-property-annotation))]
     (cond-> {}
       (seq classes') (assoc :classes classes')
@@ -127,7 +143,9 @@
                       subclasses) 
      :object-properties (map compact-property object-properties)
      :classes (map (fn [{class-iri :class
-                         properties :datatype-properties}]
-                     (cond-> {:class (compact-iri' class-iri)}
+                         properties :datatype-properties
+                         internal? :internal?}]
+                     (cond-> {:class (compact-iri' class-iri)
+                              :internal? internal?}
                        (seq properties) (assoc :datatype-properties (map compact-property properties))))
                    classes)}))

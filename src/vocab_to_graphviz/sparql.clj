@@ -1,7 +1,7 @@
 (ns vocab-to-graphviz.sparql
   (:require [vocab-to-graphviz.store :refer [store]]
             [vocab-to-graphviz.rdf :refer [resource->clj]]
-            [clojure.java.io :as io])
+            [stencil.core :refer [render-file]])
   (:import (org.apache.jena.query Dataset)
            (org.apache.jena.query QueryExecutionFactory)))
 
@@ -18,12 +18,23 @@
 
 ; ----- Public functions -----
 
-(defn select-query
-  "Execute SPARQL SELECT `query` resource."
+(defn template
+  "Render the Mustache template from `path` using `data`."
+  [path & {:keys [data]
+           :or {data {}}}]
+  (render-file path data))
+
+(defn ask-query
+  "Execute SPARQL ASK `query`."
   [^String query]
-  (let [query' (slurp (io/resource query))]
-    (with-open [qexec (QueryExecutionFactory/create query' store)]
-      (let [results (.execSelect qexec)
-            result-vars (.getResultVars results)]
-        (mapv (partial process-select-solution result-vars)
-              (iterator-seq results))))))
+  (with-open [qexec (QueryExecutionFactory/create query store)]
+    (.execAsk qexec)))
+
+(defn select-query
+  "Execute SPARQL SELECT `query`."
+  [^String query]
+  (with-open [qexec (QueryExecutionFactory/create query store)]
+    (let [results (.execSelect qexec)
+          result-vars (.getResultVars results)]
+      (mapv (partial process-select-solution result-vars)
+            (iterator-seq results)))))

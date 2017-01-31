@@ -34,7 +34,7 @@
 (defn class-node
   "Format a node for class."
   [{class-iri :class
-    :keys [datatype-properties]
+    :keys [datatype-properties internal?]
     :as node}]
   (let [class-key (to-key class-iri)]
     [class-key
@@ -49,16 +49,16 @@
       :fontname monospace-font}]))
 
 (defn edges
-  "Format edges representing object properties of classes.
-  `internal?` is a predicate that is true if provided with a class in the diagram."
-  [internal? object-properties]
+  "Format edges representing object properties of classes."
+  [object-properties]
   (letfn [(format-label [label]
             [:tr [:td {:align "left"} [:font small-font label]]])
           (format-edge [[[domain range-iri] properties]]
             [(to-key domain)
              (to-key range-iri)
              {:label (html (into [:table {:border 0 :cellborder 0}]
-                                 (mapv (comp format-label :property) properties)))
+                                 (mapv (comp format-label :property)
+                                       (sort-by :property properties))))
               :arrowhead "open"
               :fontname monospace-font}])]
     (->> object-properties
@@ -82,17 +82,12 @@
   [{:keys [classes object-properties subclasses]
     :as schema}
    ns-prefixes]
-  (let [internal? (into #{} (map :class classes))
-        domain-range-classes (->> object-properties
-                                  (mapcat (juxt :domain :range))
-                                  (map (partial hash-map :class)))
-        classes' (distinct (concat classes domain-range-classes))]
-    (dot (digraph (concat [{:overlap "false"
-                            :splines "true"}
-                           (node-attrs {:shape :none
-                                        :margin 0})]
-                          (map class-node classes')
-                          (edges internal? object-properties)
-                          [(subgraph :legend [{:rank :sink}
-                                              [:prefixes {:label (namespace-prefixes-box ns-prefixes)
-                                                          :fontname monospace-font}]])])))))
+  (dot (digraph (concat [{:overlap "false"
+                          :splines "true"}
+                         (node-attrs {:shape :none
+                                      :margin 0})]
+                        (map class-node classes)
+                        (edges object-properties)
+                        [(subgraph :legend [{:rank :sink}
+                                            [:prefixes {:label (namespace-prefixes-box ns-prefixes)
+                                                        :fontname monospace-font}]])]))))
