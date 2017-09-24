@@ -79,9 +79,9 @@
 (defn class-diagram
   "Make a class diagram representing `schema`.
   `ns-prefixes` are used as a legend explaining the namespace prefixes."
-  [{:keys [classes object-properties subclasses]
-    :as schema}
-   ns-prefixes]
+  [ns-prefixes
+   {:keys [classes object-properties subclasses]
+    :as schema}]
   (dot (digraph (concat [{:overlap "false"
                           :splines "true"}
                          (node-attrs {:shape :none
