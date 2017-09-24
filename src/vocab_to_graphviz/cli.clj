@@ -1,11 +1,11 @@
 (ns vocab-to-graphviz.cli
   (:gen-class)
-  (:require [vocab-to-graphviz.spec :as spec]
+  (:require [vocab-to-graphviz.core :as core]
+            [vocab-to-graphviz.spec :as spec]
             [vocab-to-graphviz.util :as util]
             [clojure.java.io :as io]
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.spec :as s]
-            [slingshot.slingshot :refer [try+]]
             [mount.core :as mount]))
 
 ; ----- Private functions -----
@@ -38,9 +38,11 @@
       (.write writer diagram))))
 
 (defn- main
-  [params]
+  [{::spec/keys [output]
+    :as params}]
   (validate-params params)
-  (try+ (mount/start-with-args params)))
+  (mount/start-with-args params)
+  (save-diagram output (core/vocab->graphviz)))
 
 ; ----- Private vars -----
 
