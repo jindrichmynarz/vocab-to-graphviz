@@ -1,6 +1,7 @@
 (ns vocab-to-graphviz.core
-  (:require [vocab-to-graphviz.sparql :as sparql]
+  (:require [vocab-to-graphviz.graphviz :as graphviz]
             [vocab-to-graphviz.prefix :as prefix]
+            [vocab-to-graphviz.sparql :as sparql]
             [vocab-to-graphviz.util :as util]
             [clojure.java.io :as io]
             [clojure.string :as string]))
@@ -149,3 +150,14 @@
                               :internal? internal?}
                        (seq properties) (assoc :datatype-properties (map compact-property properties))))
                    classes)}))
+
+(defn vocab->graphviz
+  "Generate a class diagram from vocabulary.
+  Returns a string in the DOT language.
+  The vocabulary is provided indirectly via `vocab-to-graphviz.store`."
+  []
+  (let [schema' (schema)
+        ns-prefixes (-> schema' schema-terms namespace-prefixes)]
+    (->> schema'
+         (compact-schema-iris ns-prefixes)
+         (graphviz/class-diagram ns-prefixes))))
